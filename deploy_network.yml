@@ -1,4 +1,3 @@
----
 - name: Configuration du Routeur Cisco Core (IP SLA et Routage Dynamique)
   hosts: cisco
   gather_facts: no
@@ -6,13 +5,13 @@
     - name: Configurer une route statique specifique pour la sonde IP SLA
       ios_config:
         lines:
-          - ip route 1.1.1.1 255.255.255.255 10.0.1.1
+          - ip route 8.8.8.8 255.255.255.255 10.0.1.1
 
     - name: Configurer la sonde IP SLA 1
       ios_config:
         parents: ip sla 1
         lines:
-          - icmp-echo 1.1.1.1 source-interface FastEthernet0/0
+          - icmp-echo 8.8.8.8
           - frequency 5
 
     - name: Activer la planification et le suivi (Tracking) de l'IP SLA
