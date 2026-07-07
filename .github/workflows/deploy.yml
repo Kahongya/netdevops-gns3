@@ -1,0 +1,35 @@
+name: Pipeline CI/CD NetDevOps (Ansible)
+
+on:
+  push:
+    branches:
+      - main  # Déclenche le pipeline à chaque 'git push' sur la branche principale
+
+jobs:
+  continuous-integration:
+    name: Phase CI - Validation et Tests
+    runs-on: self-hosted  # Indique que le test s'exécute sur notre agent local GNS3
+    steps:
+      - name: Récupérer le code du dépôt GitHub
+        uses: actions/checkout@v4
+
+      - name: Étape 1 - Vérification de la syntaxe des Playbooks
+        run: |
+          ansible-playbook -i hosts.ini ping_test.yml --syntax-check
+          ansible-playbook -i hosts.ini deploy_network.yml --syntax-check
+
+      - name: Étape 2 - Test de connectivité SSH (Ping)
+        run: |
+          ansible-playbook -i hosts.ini ping_test.yml
+
+  continuous-deployment:
+    name: Phase CD - Déploiement sur le Réseau
+    needs: continuous-integration  # N'exécute le déploiement que si la phase CI réussit
+    runs-on: self-hosted
+    steps:
+      - name: Récupérer le code du dépôt GitHub
+        uses: actions/checkout@v4
+
+      - name: Étape 3 - Application de la configuration (Routage et NAT)
+        run: |
+          ansible-playbook -i hosts.ini deploy_network.yml

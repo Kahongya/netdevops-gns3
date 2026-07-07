@@ -1,0 +1,6 @@
+- name: Test de connectivite avec les equipements reseau
+  hosts: all
+  gather_facts: no
+  tasks:
+    - name: Executer un ping reseau de base
+      ansible.builtin.ping:

@@ -1,0 +1,43 @@
+---
+- name: Configuration du Routeur Cisco Core (IP SLA et Routage Dynamique)
+  hosts: cisco
+  gather_facts: no
+  tasks:
+    - name: Configurer une route statique specifique pour la sonde IP SLA
+      ios_config:
+        lines:
+          - ip route 1.1.1.1 255.255.255.255 10.0.1.1
+
+    - name: Configurer la sonde IP SLA 1
+      ios_config:
+        parents: ip sla 1
+        lines:
+          - icmp-echo 1.1.1.1 source-interface FastEthernet0/0
+          - frequency 5
+
+    - name: Activer la planification et le suivi (Tracking) de l'IP SLA
+      ios_config:
+        lines:
+          - ip sla schedule 1 life forever start-time now
+          - track 1 ip sla 1 reachability
+
+    - name: Configurer les routes statiques liees au Tracking (Failover intelligent)
+      ios_config:
+        lines:
+          - no ip route 0.0.0.0 0.0.0.0 10.0.1.1 10
+          - ip route 0.0.0.0 0.0.0.0 10.0.1.1 10 track 1
+          - ip route 0.0.0.0 0.0.0.0 10.0.2.1 20
+
+- name: Configuration des Routeurs MikroTik Edge (Internet et NAT)
+  hosts: mikrotik
+  gather_facts: no
+  tasks:
+    - name: Activer le NAT (Masquerade) pour l'acces Internet
+      cli_command:
+        command: /ip firewall nat add chain=srcnat out-interface=ether1 action=masquerade
+      ignore_errors: yes
+
+    - name: Ajouter la route de retour vers le LAN d'administration
+      cli_command:
+        command: /ip route add dst-address=192.168.10.0/24 gateway={{ '10.0.1.2' if inventory_hostname == 'MikroTik-Edge1' else '10.0.2.2' }}
+      ignore_errors: yes
