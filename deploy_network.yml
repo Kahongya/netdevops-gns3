@@ -28,10 +28,11 @@
           - ip route 0.0.0.0 0.0.0.0 10.0.1.1 10 track 1
           - ip route 0.0.0.0 0.0.0.0 10.0.2.1 20
 
+    # AJOUT AUTOMATISÉ DU NOUVEAU RÉSEAU DE PRODUCTION "FINANCE" (AVEC PARENTS)
     - name: Configuration du nouveau LAN Finance (VLAN 50) sur Cisco
       ios_config:
+        parents: interface FastEthernet2/1
         lines:
-          - interface FastEthernet2/1
           - description LAN_FINANCE_VLAN50
           - ip address 192.168.50.1 255.255.255.0
           - no shutdown
