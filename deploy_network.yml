@@ -1,4 +1,5 @@
-- name: Configuration du Routeur Cisco Core (IP SLA et Routage Dynamique)
+---
+- name: Configuration du Routeur Cisco Core (IP SLA, Failover, DHCP + VLANs)
   hosts: cisco
   gather_facts: no
   tasks:
@@ -27,7 +28,38 @@
           - ip route 0.0.0.0 0.0.0.0 10.0.1.1 10 track 1
           - ip route 0.0.0.0 0.0.0.0 10.0.2.1 20
 
-- name: Configuration des Routeurs MikroTik Edge (Internet et NAT)
+    - name: Configuration du nouveau LAN Finance (VLAN 50) sur Cisco
+      ios_config:
+        lines:
+          - interface FastEthernet2/1
+          - description LAN_FINANCE_VLAN50
+          - ip address 192.168.50.1 255.255.255.0
+          - no shutdown
+
+    # AUTOMATISATION DU SERVICE DHCP SUR LE CISCO
+    - name: Configurer les adresses exclues du DHCP sur Cisco (Pour securite)
+      ios_config:
+        lines:
+          - ip dhcp excluded-address 192.168.10.1 192.168.10.20
+          - ip dhcp excluded-address 192.168.50.1 192.168.50.20
+
+    - name: Configurer le Pool DHCP pour le reseau d'administration (VLAN 10)
+      ios_config:
+        parents: ip dhcp pool LAN_ADMIN
+        lines:
+          - network 192.168.10.0 255.255.255.0
+          - default-router 192.168.10.1
+          - dns-server 8.8.8.8
+
+    - name: Configurer le Pool DHCP pour le reseau Finance (VLAN 50)
+      ios_config:
+        parents: ip dhcp pool LAN_FINANCE
+        lines:
+          - network 192.168.50.0 255.255.255.0
+          - default-router 192.168.50.1
+          - dns-server 8.8.8.8
+
+- name: Configuration des Routeurs MikroTik Edge (Internet, NAT et Routes de retour)
   hosts: mikrotik
   gather_facts: no
   tasks:
@@ -39,4 +71,9 @@
     - name: Ajouter la route de retour vers le LAN d'administration
       cli_command:
         command: /ip route add dst-address=192.168.10.0/24 gateway={{ '10.0.1.2' if inventory_hostname == 'MikroTik-Edge1' else '10.0.2.2' }}
+      ignore_errors: yes
+
+    - name: Ajouter la route de retour vers le nouveau LAN Finance
+      cli_command:
+        command: /ip route add dst-address=192.168.50.0/24 gateway={{ '10.0.1.2' if inventory_hostname == 'MikroTik-Edge1' else '10.0.2.2' }}
       ignore_errors: yes
