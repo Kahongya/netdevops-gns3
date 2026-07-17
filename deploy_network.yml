@@ -34,7 +34,7 @@
         parents: interface FastEthernet2/1
         lines:
           - description LAN_FINANCE_VLAN50
-          - ip address 192.168.50.1 255.255.255.0
+          - ip address 192.168.60.1 255.255.255.0
           - no shutdown
 
     # AUTOMATISATION DU SERVICE DHCP SUR LE CISCO
@@ -42,7 +42,7 @@
       ios_config:
         lines:
           - ip dhcp excluded-address 192.168.10.1 192.168.10.20
-          - ip dhcp excluded-address 192.168.50.1 192.168.50.20
+          - ip dhcp excluded-address 192.168.60.1 192.168.60.20
 
     - name: Configurer le Pool DHCP pour le reseau d'administration (VLAN 10)
       ios_config:
@@ -54,9 +54,9 @@
 
     - name: Configurer le Pool DHCP pour le reseau Finance (VLAN 50)
       ios_config:
-        parents: ip dhcp pool LAN_FINANCE
+        parents: ip dhcp pool visiteur
         lines:
-          - network 192.168.50.0 255.255.255.0
+          - network 192.168.70.0 255.255.255.0
           - default-router 192.168.60.1
           - dns-server 8.8.8.8
 
@@ -76,5 +76,5 @@
 
     - name: Ajouter la route de retour vers le nouveau LAN Finance
       cli_command:
-        command: /ip route add dst-address=192.168.50.0/24 gateway={{ '10.0.1.2' if inventory_hostname == 'MikroTik-Edge1' else '10.0.2.2' }}
+        command: /ip route add dst-address=192.168.60.0/24 gateway={{ '10.0.1.2' if inventory_hostname == 'MikroTik-Edge1' else '10.0.2.2' }}
       ignore_errors: yes
